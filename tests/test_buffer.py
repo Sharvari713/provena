@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import time
 
+import pytest
+
 from provena import ContextTrail
 from provena.buffer import WriteBuffer
 from provena.storage import InMemoryBackend
@@ -115,6 +117,23 @@ class TestContextTrailBuffered:
         trail.close()
         # After close, records should have been flushed
         # Can't query after close, but buffer should be empty
+
+    def test_close_closes_backend_even_if_buffer_close_raises(self, tmp_path):
+        db_path = str(tmp_path / "trail.db")
+        trail = ContextTrail(
+            storage_path=db_path, buffered=True, buffer_size=100, flush_interval=60
+        )
+        trail.log("data", source="retriever")
+        real_close = trail._buffer.close
+
+        def boom() -> None:
+            real_close()
+            raise OSError("simulated disk full")
+
+        trail._buffer.close = boom  # type: ignore[method-assign]
+        with pytest.raises(OSError, match="simulated disk full"):
+            trail.close()
+        assert trail._backend._conn is None
 
     def test_buffered_chain_integrity(self):
         trail = ContextTrail(

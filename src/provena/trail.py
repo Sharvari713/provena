@@ -825,9 +825,11 @@ class ContextTrail:
 
     def close(self) -> None:
         """Close the storage backend and release resources."""
-        if self._buffer is not None:
-            self._buffer.close()
-        self._backend.close()
+        try:
+            if self._buffer is not None:
+                self._buffer.close()
+        finally:
+            self._backend.close()
 
     def _handle_error(self, exc: Exception) -> None:
         with self._lock:
