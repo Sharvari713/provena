@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Fixed
 
+- **`ContextTrail.close()` now closes the backend even if flushing the buffer fails** — the two calls are wrapped in `try/finally`, so a disk-full or I/O error during the final buffer flush no longer leaks the SQLite connection or skips the WAL checkpoint (#144)
 - **`provena mcp serve` now closes the trail on exit** — the server call is wrapped in `try/finally`, so the SQLite handle/WAL is checkpointed and the final buffer flush runs even if `configure()`/`create_server()` raise or `server.run()` returns (#148)
 - **`verify_chain()` returns `ChainVerdict(intact=False)` for a `None`/malformed `chain_hash`** instead of raising `TypeError` out of `hmac.compare_digest`, so corrupted or hand-edited records are reported as broken links rather than crashing the audit path (#146)
 - **`InMemoryBackend.get()` and `get_last()` now hold the backend lock** when reading `_records`, matching every other method on the backend and closing a TOCTOU race that could raise `IndexError` under concurrent `append()` (#145)
