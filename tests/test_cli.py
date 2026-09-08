@@ -780,6 +780,20 @@ class TestCLIStats:
         finally:
             os.unlink(db_path)
 
+    def test_stats_empty_trail(self):
+        # Regression: empty trail must not produce consecutive empty pipe segments
+        db_path = _create_trail_db(0)
+        try:
+            runner = CliRunner()
+            result = runner.invoke(cli, ["--db", db_path, "stats"])
+            assert result.exit_code == 0
+            assert "0 records" in result.output
+            assert "||" not in result.output
+            assert "| |" not in result.output
+            assert "chain: INTACT" in result.output
+        finally:
+            os.unlink(db_path)
+
 
 class TestCLIMcpServe:
     """Regression tests for #148: `mcp serve` must close the trail even when

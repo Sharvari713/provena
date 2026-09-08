@@ -140,8 +140,8 @@ def audit(
     try:
         records = trail.query(
             source=source,
-            provenance_status=provenance_status,
-            freshness_status=freshness_status,
+            provenance_status=provenance_status.upper() if provenance_status else None,
+            freshness_status=freshness_status.upper() if freshness_status else None,
             limit=limit,
             start=start,
             end=end,
@@ -599,14 +599,14 @@ def stats(ctx: click.Context) -> None:
         verdict = trail.verify_chain()
         prov = " ".join(
             f"{k}: {val}" for k, val in sorted(summary.get("provenance", {}).items())
-        )
+        ) or "none"
         fresh = " ".join(
             f"{k}: {val}" for k, val in sorted(summary.get("freshness", {}).items())
-        )
+        ) or "none"
         chain = "INTACT" if verdict.intact else f"BROKEN@{verdict.broken_at}"
         signed = "yes" if summary.get("signed") else "no"
         click.echo(
-            f"{summary['total']} records | {prov} | {fresh} | chain: {chain} | signed: {signed}"
+            f"{summary['total']} records | provenance: {prov} | freshness: {fresh} | chain: {chain} | signed: {signed}"
         )
     finally:
         trail.close()

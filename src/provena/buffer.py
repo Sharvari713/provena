@@ -14,6 +14,7 @@ from typing import Any, Protocol
 _logger = logging.getLogger("provena.buffer")
 _active_buffers: weakref.WeakSet[WriteBuffer] = weakref.WeakSet()
 _active_buffers_lock = threading.RLock()
+_prev_sigterm_handler: Any = None
 
 
 class _Appendable(Protocol):
@@ -38,7 +39,7 @@ class WriteBuffer:
         self._buffer: deque[dict[str, Any]] = deque()
         self._buffer_size = buffer_size
         self._flush_interval = flush_interval
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._stop = threading.Event()
 
         self._thread = threading.Thread(
@@ -123,10 +124,13 @@ class WriteBuffer:
 
 
 def _register_for_sigterm(buffer: WriteBuffer) -> None:
+    global _prev_sigterm_handler
     with _active_buffers_lock:
         _active_buffers.add(buffer)
         with contextlib.suppress(OSError, ValueError):
-            if signal.getsignal(signal.SIGTERM) is not _sigterm_handler:
+            current = signal.getsignal(signal.SIGTERM)
+            if current is not _sigterm_handler:
+                _prev_sigterm_handler = current
                 signal.signal(signal.SIGTERM, _sigterm_handler)
 
 
@@ -140,11 +144,13 @@ def _sigterm_handler(signum: int, frame: Any) -> None:
         buffers = tuple(_active_buffers)
     for buffer in buffers:
         buffer._sigterm_flush()
+    if callable(_prev_sigterm_handler):
+        _prev_sigterm_handler(signum, frame)
 
 
 def _weak_flush(
     buffer: deque[dict[str, Any]],
-    lock: threading.Lock,
+    lock: threading.RLock,
     backend: _Appendable,
 ) -> None:
     """Last-resort flush via weakref.finalize."""

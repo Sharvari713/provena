@@ -892,7 +892,7 @@ class ContextTrail:
             with contextlib.suppress(Exception):
                 self._on_error(exc)
         if self._strict:
-            raise
+            raise exc
         return None
 
     def __enter__(self) -> ContextTrail:

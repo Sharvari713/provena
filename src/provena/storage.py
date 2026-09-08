@@ -310,11 +310,13 @@ class InMemoryBackend:
 
     def count(self) -> int:
         """Return the total number of records."""
-        return len(self._records)
+        with self._lock:
+            return len(self._records)
 
     def all_records(self) -> list[dict[str, Any]]:
         """Return all records ordered by ID."""
-        return [{**r} for r in self._records]
+        with self._lock:
+            return [{**r} for r in self._records]
 
     def query(
         self,
