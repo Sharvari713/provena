@@ -597,12 +597,19 @@ def stats(ctx: click.Context) -> None:
     try:
         summary = trail.summary()
         verdict = trail.verify_chain()
-        prov = " ".join(
-            f"{k}: {val}" for k, val in sorted(summary.get("provenance", {}).items())
-        ) or "none"
-        fresh = " ".join(
-            f"{k}: {val}" for k, val in sorted(summary.get("freshness", {}).items())
-        ) or "none"
+        prov = (
+            " ".join(
+                f"{k}: {val}"
+                for k, val in sorted(summary.get("provenance", {}).items())
+            )
+            or "none"
+        )
+        fresh = (
+            " ".join(
+                f"{k}: {val}" for k, val in sorted(summary.get("freshness", {}).items())
+            )
+            or "none"
+        )
         chain = "INTACT" if verdict.intact else f"BROKEN@{verdict.broken_at}"
         signed = "yes" if summary.get("signed") else "no"
         click.echo(
