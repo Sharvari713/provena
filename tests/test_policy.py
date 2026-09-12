@@ -209,6 +209,21 @@ class TestPolicyEngineFromConfig:
         assert len(engine.policies) == 1
         assert engine.policies[0].name == "require_signing"
 
+    def test_require_signing_config_defaults_to_unsigned(self):
+        config = [{"check": "require_signing", "enforcement": "block"}]
+        engine = PolicyEngine.from_config(config)
+        assert engine.policies[0].check(None) is False
+
+    def test_require_signing_config_with_signed_ref(self):
+        config = [{"check": "require_signing", "enforcement": "block"}]
+        engine = PolicyEngine.from_config(config, _signed_ref=[True])
+        assert engine.policies[0].check(None) is True
+
+    def test_require_signing_config_with_unsigned_ref(self):
+        config = [{"check": "require_signing", "enforcement": "block"}]
+        engine = PolicyEngine.from_config(config, _signed_ref=[False])
+        assert engine.policies[0].check(None) is False
+
     def test_source_allowlist_config(self):
         config = [
             {

@@ -153,7 +153,12 @@ class PolicyEngine:
         return PolicyEvaluation(decision=decision, results=tuple(results))
 
     @classmethod
-    def from_config(cls, config: list[dict[str, Any]]) -> PolicyEngine:
+    def from_config(
+        cls,
+        config: list[dict[str, Any]],
+        *,
+        _signed_ref: list[bool] | None = None,
+    ) -> PolicyEngine:
         """Build a PolicyEngine from a list of declarative policy dicts.
 
         Each dict should have keys: ``check``, ``enforcement`` (optional,
@@ -161,6 +166,14 @@ class PolicyEngine:
 
         Supported checks: ``"freshness"``, ``"provenance"``,
         ``"require_signing"``, ``"source_allowlist"``.
+
+        Args:
+            config: The declarative policy list.
+            _signed_ref: Mutable reference to the trail's signing state,
+                wired through to ``require_signing()``. Callers that build
+                a ``PolicyEngine`` standalone (without a ``ContextTrail``)
+                must supply this themselves, or ``require_signing`` will
+                treat the trail as unsigned.
         """
         policies: list[Policy] = []
         for entry in config:
@@ -186,7 +199,9 @@ class PolicyEngine:
                     provenance_check(status=status, enforcement=enforcement)
                 )
             elif check_name == "require_signing":
-                policies.append(require_signing(enforcement=enforcement))
+                policies.append(
+                    require_signing(enforcement=enforcement, _signed_ref=_signed_ref)
+                )
             elif check_name == "source_allowlist":
                 allowed = entry.get("sources", [])
                 policies.append(

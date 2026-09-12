@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Fixed
+
+- **`PolicyEngine.from_config()` now accepts a `_signed_ref` to wire `require_signing` to the trail's real signing state.** Previously, calling `from_config()` standalone (without a `ContextTrail` to patch it afterward) built a `require_signing` policy stuck on its `[False]` default, so a `block`-level `require_signing` check would deny every record regardless of whether the trail was signed. `ContextTrail(config=...)` now passes its own signing state through directly instead of relying solely on the post-construction patch (#141)
+
 ## [1.2.0] - 2026-09-07
 
 ### Added

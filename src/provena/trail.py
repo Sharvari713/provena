@@ -189,7 +189,11 @@ class ContextTrail:
         key = _resolve_signing_key(key_value)
         self._hasher = ChainHasher(signing_key=key)
         self._policy_engine = (
-            PolicyEngine.from_config(policy_config) if policy_config else PolicyEngine()
+            PolicyEngine.from_config(
+                policy_config, _signed_ref=[self._hasher.is_signed]
+            )
+            if policy_config
+            else PolicyEngine()
         )
         self._update_signing_policies()
         self._validator = ProvenanceValidator(

@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from provena import ContextTrail
+from provena.policy import PolicyViolation
 
 
 class TestTOMLConfig:
@@ -38,6 +39,35 @@ class TestTOMLConfig:
         trail = ContextTrail(config=str(config_file))
         record = trail.log("test", source="retriever")
         assert record is not None
+        trail.close()
+
+    def test_toml_require_signing_passes_on_signed_trail(self, tmp_path):
+        config_file = tmp_path / "provena.toml"
+        config_file.write_text(
+            '[storage]\nbackend = "memory"\n\n'
+            '[hash_chain]\nsigning_key = "test-secret"\n\n'
+            "[[policies]]\n"
+            'check = "require_signing"\n'
+            'enforcement = "block"\n'
+        )
+        trail = ContextTrail(config=str(config_file))
+        assert trail.is_signed
+        record = trail.log("test", source="retriever")
+        assert record is not None
+        trail.close()
+
+    def test_toml_require_signing_blocks_unsigned_trail(self, tmp_path):
+        config_file = tmp_path / "provena.toml"
+        config_file.write_text(
+            '[storage]\nbackend = "memory"\n\n'
+            "[[policies]]\n"
+            'check = "require_signing"\n'
+            'enforcement = "block"\n'
+        )
+        trail = ContextTrail(config=str(config_file))
+        assert not trail.is_signed
+        with pytest.raises(PolicyViolation):
+            trail.log("test", source="retriever")
         trail.close()
 
 
